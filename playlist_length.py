@@ -1,11 +1,18 @@
 from selenium import webdriver
-import time
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
+import time
 
 
 def playlist_length(driver_path, link, last=-1):
-    wd = webdriver.Chrome(executable_path=driver_path)
+    def in_text(text: str):
+        if ":" in text:
+            return True
+        return False
+
+    o = webdriver.ChromeOptions()
+    o.headless = True
+    wd = webdriver.Chrome(executable_path=driver_path, options=o)
     wd.maximize_window()
     wd.get(link)
     WebDriverWait(wd, timeout=10).until(lambda d: d.find_element(By.CLASS_NAME,
@@ -14,12 +21,25 @@ def playlist_length(driver_path, link, last=-1):
     no = int(wd.find_element(By.XPATH, '//*[@id="stats"]/yt-formatted-string[1]/span[1]').text)
 
     for i in range(no // 5):
-        wd.execute_script("window.scrollTo({a}, {b});".format(a=500 * i, b=500 * (i + 1)))
-        time.sleep(0.5)  # make this better
-    ele = wd.find_elements(By.CLASS_NAME, "style-scope ytd-thumbnail-overlay-time-status-renderer")
+        if ((i + 1) * 5) % 100 == 0:  # make this better
+            time.sleep(5)
+        ele = wd.find_elements(By.CLASS_NAME, "style-scope ytd-thumbnail-overlay-time-status-renderer")
+        WebDriverWait(wd, timeout=10).until(lambda d: in_text(d.find_elements(By.CLASS_NAME, "style-scope "
+                                                                                             "ytd-thumbnail-overlay"
+                                                                                             "-time-status-renderer")[
+                                                                  (i) * 5].text))
+        wd.execute_script("window.scrollTo({a}, {b});".format(a=0, b=515 * (i + 1)))
+        if last != -1 and (i * 5) >= last:
+            break  # Mystery if you exchange this line with return you get TypeError: cannot unpack non-iterable
+            # NoneType object
+
     li = []
-    for i in ele[:last]:
-        li.append(i.text)
+    if last == -1:
+        for i in ele:
+            li.append(i.text)
+    else:
+        for i in ele[:last]:
+            li.append(i.text)
     tot = 0
     for i in li:
         a, b = i.split(":")
@@ -29,11 +49,13 @@ def playlist_length(driver_path, link, last=-1):
     hours = tot // 3600
     minutes = int((tot / 60) % 60)
     seconds = tot % 60
-    print("This playlist is {} hours, {} minutes and {} seconds long".format(hours, minutes, seconds))
     wd.quit()
+    return hours, minutes, seconds
 
 
 if __name__ == "__main__":
-    playlist_length(r"",  # enter the location of webdriver here
-                    "")  # enter the link to the playlist here
-    # if you want to find length of first x videos add ", x" in playlist_length
+    url = str(input("URL: "))
+    last = int(input("type -1 if you want to find of duration ofentire playlist or first n videos"))
+    hours, minutes, seconds = playlist_length(r"C:\Users\ashut\Desktop\scraping\chromedriver", url, last)
+
+    print("This playlist is {} hours, {} minutes and {} seconds long".format(hours, minutes, seconds))
