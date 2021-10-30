@@ -42,20 +42,30 @@ def playlist_length(driver_path, link, last=-1):
             li.append(i.text)
     tot = 0
     for i in li:
-        a, b = i.split(":")
-        a = int(a)
-        b = int(b)
-        tot += a * 60 + b
-    hours = tot // 3600
+        try:
+            a, b = i.split(":")
+            a = int(a)
+            b = int(b)
+            tot += a * 60 + b
+        except ValueError:
+            a, b, c = i.split(":")
+            a = int(a)
+            b = int(b)
+            c = int(c)
+            tot += a * 3600 + b * 60 + c
+    days = tot // 86400
+    hours = (tot // 3600) % 24
     minutes = int((tot / 60) % 60)
     seconds = tot % 60
     wd.quit()
-    return hours, minutes, seconds
+    return days, hours, minutes, seconds
 
 
 if __name__ == "__main__":
     url = str(input("URL: "))
-    last = int(input("type -1 if you want to find of duration ofentire playlist or first n videos"))
-    hours, minutes, seconds = playlist_length(r"C:\Users\ashut\Desktop\scraping\chromedriver", url, last)
-
-    print("This playlist is {} hours, {} minutes and {} seconds long".format(hours, minutes, seconds))
+    try:
+        last = int(input("type -1 if you want to find of duration of entire playlist or first n videos: "))
+    except ValueError:
+        last = -1
+    days, hours, minutes, seconds = playlist_length(r"C:\Users\ashut\Desktop\scraping\chromedriver", url, last)
+    print("This playlist is {} days, {} hours, {} minutes and {} seconds long".format(days, hours, minutes, seconds))
