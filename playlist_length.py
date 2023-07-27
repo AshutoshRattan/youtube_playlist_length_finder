@@ -10,10 +10,8 @@ def playlist_length(driver_path, link, last=-1):
             return True
         return False
 
-    time.sleep(5)
-
     o = webdriver.ChromeOptions()
-    # o.headless = True
+    o.headless = True
     wd = webdriver.Chrome(executable_path=driver_path, options=o)
     wd.maximize_window()
     wd.get(link)
